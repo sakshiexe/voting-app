@@ -1,28 +1,58 @@
-# Voting App Microservices on Kubernetes
+# Kubernetes Voting App Microservices
 
-This repository contains Kubernetes YAML configurations for a microservices-based voting application. The app consists of multiple components running as pods and services, including a frontend, backend, Redis, PostgreSQL, and a worker service.
+This repository contains Kubernetes YAML configurations for a microservices-based voting application.
 
-## Tech Stack
+## Architecture Overview
 
-- **Frontend:** HTML pages served from a pod
-- **Backend:** Python-based API for handling votes
-- **Database:** PostgreSQL for persisting votes
-- **Cache:** Redis for temporary vote storage
-- **Worker:** Handles vote processing and transfers data between Redis and PostgreSQL
-- **Orchestration:** Kubernetes for containerized service management
+The application consists of multiple microservices running in separate pods, each with a specific role:
 
-## Architecture
+- **Frontend**: Two frontend pods (`voting-app` and `result-app`), each exposed via a NodePort service.
+- **Backend**: A worker pod (`worker`) that processes votes and communicates with the database.
+- **Database**: PostgreSQL (`postgres`) for storing votes.
+- **Cache**: Redis (`redis`) for temporary vote storage.
+
+## Architecture Flow
 
 ```plaintext
-+-------------+       +------------+       +----------+
-|  Frontend   | ----> |  Backend   | ----> |  Worker  |
-+-------------+       +------------+       +----------+
-                                  |             |
-                                  v             v
-                           +-----------+   +-----------+
-                           |   Redis   |   | Postgres  |
-                           +-----------+   +-----------+
-
+                     +--------------------+
+                     |  User Interaction  |
+                     +--------------------+
+                               |
+          +--------------------------------------+
+          |          Frontend Services         |
+          +--------------------------------------+
+          | 1. voting-app  (Python)            |
+          | 2. result-app  (JavaScript)        |
+          +--------------------------------------+
+                     |       |
+         (NodePort)  |       |  (NodePort)
+                     v       v
+          +-------------------------+
+          |  Voting-App Pod (Python) |
+          +-------------------------+
+                     |
+                     v
+          +-----------------+
+          |  Redis Pod      |
+          |  (In-memory DB) |
+          +-----------------+
+                     |
+                     v
+          +-----------------+
+          |  Worker Pod     |
+          |  (Processing)   |
+          +-----------------+
+                     |
+                     v
+          +-----------------+
+          |  Postgres Pod   |
+          |  (Database)     |
+          +-----------------+
+                     |
+                     v
+          +----------------------------+
+          |  Result-App Pod (JavaScript)|
+          +----------------------------+
 ```
 ## Setup Instructions
 
